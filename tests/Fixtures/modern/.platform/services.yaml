@@ -1,0 +1,6 @@
+solr_9_9:
+  type: 'solr:9.9'
+  configuration:
+    cores:
+      example:
+        conf_dir: !archive solr_configsets/example/conf/

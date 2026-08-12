@@ -1,0 +1,5 @@
+projects:
+  - id: modern
+    path: modern
+  - id: legacy
+    path: legacy

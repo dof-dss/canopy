@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "NOTICE: example has hosting but no committed connector."
+echo "Solr configset verification passed for 1 declared site(s)."
