@@ -1,6 +1,11 @@
 name: departmental
 description: Example capability profile for a public-sector departmental site.
 
+expectations:
+  solr:
+    version: '9.9'
+    lucene_match_version: '9.12.2'
+
 capabilities:
   revisions:
     expectation: required

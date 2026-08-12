@@ -57,18 +57,39 @@ never be presented as a pass.
 
 ## Proposed usage
 
-Canopy is currently being scaffolded; the audit commands below describe the
-intended interface rather than completed functionality:
+The first implemented audit pack statically inspects committed Solr configsets
+across one or more projects:
 
 ```shell
-vendor/bin/canopy audit solr
-vendor/bin/canopy audit config
-vendor/bin/canopy audit editorial --profile=departmental
-vendor/bin/canopy audit update-readiness
-vendor/bin/canopy compare result-one.json result-two.json
+bin/canopy audit solr --project=/path/to/drupal-project
+bin/canopy audit solr \
+  --project=unity1=/path/to/unity \
+  --project=unity2=/path/to/unity2
+bin/canopy audit solr --inventory=config/inventories/nics-drupal.example.yml
 ```
 
-The initial executable currently provides an `about` command:
+Use `--format=json` for the complete machine-readable evidence. Canopy does not
+execute code from an audited repository by default. The Unity-family projects
+provide their own additional static verifier; explicitly enable it with:
+
+```shell
+bin/canopy audit solr \
+  --inventory=config/inventories/nics-drupal.example.yml \
+  --run-project-verifier
+```
+
+This initial pack discovers modern per-site configsets and older single hosted
+or DDEV config directories. It checks required files, fingerprints content and
+file manifests, records Lucene compatibility metadata, compares duplicate
+hosted/local sources, compares repository service versions, and reports
+estate-wide structural and version variants. Inventories may define explicit
+`expectations.solr.version` and `expectations.solr.lucene_match_version` values;
+Canopy treats configset mismatches against those declared expectations as
+failures rather than assuming every project belongs to the same Solr baseline.
+It does not yet start DDEV, connect to Solr, bootstrap Drupal, or claim runtime
+and indexing health.
+
+The executable also provides an `about` command:
 
 ```shell
 composer install
@@ -97,7 +118,8 @@ may store and display results, but should not reimplement checks or require
 broader credentials than the checks themselves.
 
 See [the architecture notes](docs/architecture.md) and the initial
-[result schema](schemas/result.schema.json).
+[result schema](schemas/result.schema.json). The implemented checks and their
+limitations are documented in the [Solr audit guide](docs/solr-audit.md).
 
 ## Development
 

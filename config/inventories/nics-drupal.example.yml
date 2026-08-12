@@ -1,0 +1,32 @@
+projects:
+  - id: unity1
+    path: ~/dof-dss/unity
+    expectations: &solr_9_9
+      solr:
+        version: '9.9'
+        lucene_match_version: '9.12.2'
+  - id: unity2
+    path: ~/dof-dss/unity2
+    expectations: *solr_9_9
+  - id: unity3
+    path: ~/dof-dss/unity3
+    expectations: *solr_9_9
+  - id: unity4
+    path: ~/dof-dss/unity4
+    expectations: *solr_9_9
+  - id: corp-lite
+    path: ~/dof-dss/corp-lite
+    expectations: *solr_9_9
+  - id: unity-intranets
+    path: ~/dof-dss/unity-intranets
+    expectations: *solr_9_9
+  - id: dept
+    path: ~/dof-dss/dept
+    expectations:
+      solr:
+        version: '9.6'
+  - id: nidirect
+    path: ~/dof-dss/nidirect-drupal
+    expectations:
+      solr:
+        version: '8.11'
