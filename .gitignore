@@ -1,0 +1,29 @@
+/vendor/
+
+# Test, analysis, and generated report output.
+/.phpunit.cache/
+/.phpunit.result.cache
+/.phpstan.cache/
+/build/
+/coverage/
+/.audit/results/
+
+# Local IDE and editor files.
+/.idea/
+/.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Local environment configuration.
+.env
+.env.*
+!.env.example
+*.local.yml
+
+# Potentially sensitive local data.
+*.sql
+*.sql.gz
+*.sqlite
+*.sqlite3
+!tests/fixtures/*.sql

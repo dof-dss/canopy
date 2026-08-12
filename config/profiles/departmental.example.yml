@@ -1,0 +1,27 @@
+name: departmental
+description: Example capability profile for a public-sector departmental site.
+
+capabilities:
+  revisions:
+    expectation: required
+  moderation:
+    expectation: required
+    states:
+      - draft
+      - review
+      - published
+      - archived
+  preview:
+    expectation: required
+  media_library:
+    expectation: required
+  redirects:
+    expectation: required
+  automatic_aliases:
+    expectation: required
+  audit_history:
+    expectation: required
+  scheduled_publishing:
+    expectation: optional
+  broken_link_detection:
+    expectation: preferred

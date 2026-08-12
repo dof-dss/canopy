@@ -1,0 +1,78 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://dof-dss.github.io/canopy/schemas/result.schema.json",
+    "title": "Canopy result document",
+    "type": "object",
+    "required": [
+        "schema_version",
+        "generated_at",
+        "tool",
+        "project",
+        "summary",
+        "results"
+    ],
+    "properties": {
+        "schema_version": {
+            "const": "1.0"
+        },
+        "generated_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "tool": {
+            "type": "object",
+            "required": ["name", "version"],
+            "properties": {
+                "name": {"const": "canopy"},
+                "version": {"type": "string"}
+            },
+            "additionalProperties": true
+        },
+        "project": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+                "name": {"type": "string"},
+                "repository": {"type": "string"},
+                "revision": {"type": "string"}
+            },
+            "additionalProperties": true
+        },
+        "summary": {
+            "type": "object",
+            "required": ["pass", "warn", "fail", "unknown", "skipped"],
+            "properties": {
+                "pass": {"type": "integer", "minimum": 0},
+                "warn": {"type": "integer", "minimum": 0},
+                "fail": {"type": "integer", "minimum": 0},
+                "unknown": {"type": "integer", "minimum": 0},
+                "skipped": {"type": "integer", "minimum": 0}
+            },
+            "additionalProperties": false
+        },
+        "results": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/result"
+            }
+        }
+    },
+    "$defs": {
+        "result": {
+            "type": "object",
+            "required": ["check_id", "status", "target", "summary", "observed_at", "evidence"],
+            "properties": {
+                "check_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]+$"},
+                "status": {"enum": ["pass", "warn", "fail", "unknown", "skipped"]},
+                "target": {"type": "string"},
+                "summary": {"type": "string"},
+                "observed_at": {"type": "string", "format": "date-time"},
+                "evidence": {"type": "object"},
+                "remediation": {"type": ["string", "null"]},
+                "duration_ms": {"type": ["integer", "null"], "minimum": 0}
+            },
+            "additionalProperties": true
+        }
+    },
+    "additionalProperties": true
+}

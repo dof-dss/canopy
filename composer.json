@@ -1,0 +1,42 @@
+{
+    "name": "dof-dss/canopy",
+    "description": "Read-only technical assurance for Drupal codebases",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "symfony/console": "^6.4 || ^7.0",
+        "symfony/process": "^6.4 || ^7.0",
+        "symfony/yaml": "^6.4 || ^7.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Canopy\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Canopy\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/canopy"
+    ],
+    "scripts": {
+        "analyse": "phpstan analyse --debug --memory-limit=512M",
+        "lint": "@php tools/lint.php",
+        "test": "phpunit",
+        "verify": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
