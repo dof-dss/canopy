@@ -1,0 +1,4 @@
+id: author
+label: Author
+permissions:
+  - 'use editorial transition submit_for_review'

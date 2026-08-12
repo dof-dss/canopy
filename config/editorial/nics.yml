@@ -1,0 +1,60 @@
+id: nics_editorial_capabilities
+label: NICS editorial capabilities
+description: >-
+  Implementation-neutral editorial expectations derived from the shared
+  capabilities present in the DEPT and NIDirect Drupal applications.
+
+capabilities:
+  revision_history:
+    label: Revision history
+    expectation: required
+    detector: moderated_bundles_revisioned
+    exclude: [webform]
+  moderation_workflow:
+    label: Content moderation workflow
+    expectation: required
+    detector: moderation_workflow
+  moderation_states:
+    label: Draft, review, published, and archived states
+    expectation: required
+    detector: workflow_states
+    values: [draft, needs_review, published, archived]
+  moderation_transitions:
+    label: Review, publishing, rejection, archival, and restoration paths
+    expectation: required
+    detector: workflow_transitions
+    values: [submit_for_review, publish, reject, archive, restore]
+  role_separation:
+    label: Author and publisher role separation
+    expectation: required
+    detector: role_separation
+  media_library:
+    label: Reusable image and document media
+    expectation: required
+    detector: media_library
+    values: [image, document]
+  url_management:
+    label: Automatic aliases and redirect management
+    expectation: required
+    detector: modules
+    values: [pathauto, redirect]
+  metadata:
+    label: Structured page metadata
+    expectation: required
+    detector: modules
+    values: [metatag]
+  review_scheduling:
+    label: Content review-date tracking
+    expectation: preferred
+    detector: field_name_fragments
+    values: [next_audit_due, next_review_date]
+  scheduled_publishing:
+    label: Scheduled publishing
+    expectation: required
+    detector: any_module
+    values: [scheduler, scheduled_transitions]
+  concurrent_editing_protection:
+    label: Concurrent-edit protection
+    expectation: required
+    detector: any_module
+    values: [content_lock, node_edit_protection]

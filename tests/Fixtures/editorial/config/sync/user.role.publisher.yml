@@ -1,0 +1,4 @@
+id: publisher
+label: Publisher
+permissions:
+  - 'use editorial transition publish'

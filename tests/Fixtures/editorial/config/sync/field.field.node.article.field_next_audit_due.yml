@@ -1,0 +1,4 @@
+id: node.article.field_next_audit_due
+field_name: field_next_audit_due
+entity_type: node
+bundle: article

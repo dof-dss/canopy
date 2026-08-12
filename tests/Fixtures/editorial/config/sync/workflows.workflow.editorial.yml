@@ -1,0 +1,18 @@
+id: editorial
+label: Editorial
+status: true
+type: content_moderation
+type_settings:
+  states:
+    archived: { label: Archived }
+    draft: { label: Draft }
+    needs_review: { label: Needs review }
+    published: { label: Published }
+  transitions:
+    archive: { label: Archive }
+    publish: { label: Publish }
+    reject: { label: Reject }
+    restore: { label: Restore }
+    submit_for_review: { label: Submit for review }
+  entity_types:
+    node: [article, webform]
