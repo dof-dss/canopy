@@ -1,0 +1,32 @@
+id: nics_media_file_assets
+label: NICS media and file assets
+description: >-
+  Media and file-management capabilities shared by the DEPT and NIDirect
+  Drupal applications.
+
+capabilities:
+  reusable_media:
+    label: Reusable image and document media
+    expectation: required
+    detector: reusable_media
+    values: [image, document]
+  media_source_wiring:
+    label: Media source-field wiring
+    expectation: required
+    detector: media_source_wiring
+  upload_allowlists:
+    label: Explicit file upload extension allowlists
+    expectation: required
+    detector: upload_allowlists
+  image_derivatives:
+    label: Image derivative styles
+    expectation: required
+    detector: image_derivatives
+  responsive_images:
+    label: Responsive image presentation
+    expectation: required
+    detector: responsive_images
+  private_assets:
+    label: Private file storage capability
+    expectation: preferred
+    detector: private_assets

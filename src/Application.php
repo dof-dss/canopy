@@ -10,7 +10,7 @@ use Symfony\Component\Console\Application as SymfonyApplication;
 
 final class Application extends SymfonyApplication
 {
-    public const VERSION = '0.2.0-dev';
+    public const VERSION = '0.3.0-dev';
 
     public function __construct()
     {
