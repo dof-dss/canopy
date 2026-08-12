@@ -124,6 +124,15 @@ The asset profile covers reusable image/document media, source-field wiring,
 upload extension allowlists, image derivatives, responsive images, and private
 file storage. See the [media and file asset audit guide](docs/asset-audit.md).
 
+Draft, human-gated prompt workflows are also available for assessing Drupal
+security advisories, preparing a narrowly scoped Unity-style update locally,
+and reviewing an uncommitted update diff. These prompts prohibit AI staging,
+commits, pushes, PR creation, and publication. See the
+[Drupal security update prompt guide](docs/security-update-prompts.md).
+They are tool-neutral foundations for agentic services rather than a mandate
+for a specific agent or platform; consuming tools must respect applicable
+`AGENTS.md` directives and the developer's role and instructions.
+
 The executable also provides an `about` command:
 
 ```shell
