@@ -34,7 +34,9 @@ final class ResultDocument
                 'version' => Application::VERSION,
             ],
             'project' => [
-                'name' => count($projects) === 1 ? $projects[0]->id : 'Solr audit estate',
+                'name' => count($projects) === 1
+                    ? $projects[0]->id
+                    : ucwords(str_replace('_', ' ', $kind)) . ' estate',
                 'repositories' => array_map(
                     static fn (ProjectTarget $project): array => ['id' => $project->id, 'path' => $project->path],
                     $projects,

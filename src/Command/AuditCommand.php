@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Canopy\Command;
 
+use Canopy\Asset\AssetAuditor;
+use Canopy\Asset\AssetProfileLoader;
+use Canopy\Editorial\EditorialAuditor;
+use Canopy\Editorial\EditorialProfileLoader;
 use Canopy\Inventory\ProjectInventoryLoader;
+use Canopy\Output\AssetConsoleRenderer;
+use Canopy\Output\EditorialConsoleRenderer;
 use Canopy\Output\ResultDocument;
 use Canopy\Output\SolrConsoleRenderer;
 use Canopy\Result\Result;
@@ -28,6 +34,12 @@ final class AuditCommand extends Command
         private readonly EstateSummary $estateSummary = new EstateSummary(),
         private readonly ResultDocument $resultDocument = new ResultDocument(),
         private readonly SolrConsoleRenderer $consoleRenderer = new SolrConsoleRenderer(),
+        private readonly EditorialAuditor $editorialAuditor = new EditorialAuditor(),
+        private readonly EditorialProfileLoader $editorialProfileLoader = new EditorialProfileLoader(),
+        private readonly EditorialConsoleRenderer $editorialConsoleRenderer = new EditorialConsoleRenderer(),
+        private readonly AssetAuditor $assetAuditor = new AssetAuditor(),
+        private readonly AssetProfileLoader $assetProfileLoader = new AssetProfileLoader(),
+        private readonly AssetConsoleRenderer $assetConsoleRenderer = new AssetConsoleRenderer(),
     ) {
         parent::__construct();
     }
@@ -35,7 +47,7 @@ final class AuditCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('pack', InputArgument::REQUIRED, 'Audit pack to run; currently only solr')
+            ->addArgument('pack', InputArgument::REQUIRED, 'Audit pack to run: solr, editorial, or assets')
             ->addOption(
                 'project',
                 'p',
@@ -43,6 +55,7 @@ final class AuditCommand extends Command
                 'Project path, optionally prefixed with a stable ID as id=/path',
             )
             ->addOption('inventory', 'i', InputOption::VALUE_REQUIRED, 'YAML inventory containing a projects list')
+            ->addOption('profile', null, InputOption::VALUE_REQUIRED, 'Capability profile used by the selected audit pack')
             ->addOption(
                 'run-project-verifier',
                 null,
@@ -57,8 +70,8 @@ final class AuditCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $pack = $input->getArgument('pack');
 
-        if ($pack !== 'solr') {
-            $io->error(sprintf('Unknown audit pack "%s". Available packs: solr.', is_scalar($pack) ? (string) $pack : ''));
+        if (!in_array($pack, ['solr', 'editorial', 'assets'], true)) {
+            $io->error(sprintf('Unknown audit pack "%s". Available packs: solr, editorial, assets.', is_scalar($pack) ? (string) $pack : ''));
             return self::INVALID;
         }
 
@@ -80,6 +93,13 @@ final class AuditCommand extends Command
         } catch (\InvalidArgumentException $exception) {
             $io->error($exception->getMessage());
             return self::INVALID;
+        }
+
+        if ($pack === 'editorial') {
+            return $this->executeEditorial($input, $output, $io, $projects, $format);
+        }
+        if ($pack === 'assets') {
+            return $this->executeAssets($input, $output, $io, $projects, $format);
         }
 
         $audits = [];
@@ -109,6 +129,81 @@ final class AuditCommand extends Command
             }
         }
 
+        return self::SUCCESS;
+    }
+
+    /** @param list<\Canopy\Inventory\ProjectTarget> $projects */
+    private function executeEditorial(
+        InputInterface $input,
+        OutputInterface $output,
+        SymfonyStyle $io,
+        array $projects,
+        string $format,
+    ): int {
+        $profileOption = $input->getOption('profile');
+        $profilePath = is_string($profileOption)
+            ? $profileOption
+            : dirname(__DIR__, 2) . '/config/editorial/nics.yml';
+        if (!str_starts_with($profilePath, DIRECTORY_SEPARATOR)) {
+            $profilePath = (string) getcwd() . DIRECTORY_SEPARATOR . $profilePath;
+        }
+
+        try {
+            $profile = $this->editorialProfileLoader->load($profilePath);
+            $results = $this->editorialAuditor->audit($projects, $profile);
+        } catch (\InvalidArgumentException $exception) {
+            $io->error($exception->getMessage());
+            return self::INVALID;
+        }
+
+        if ($format === 'json') {
+            $document = $this->resultDocument->build('editorial_capability_audit', $projects, $results);
+            $json = json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+            $output->writeln($json);
+        } else {
+            $this->editorialConsoleRenderer->render($output, $results);
+        }
+
+        foreach ($results as $result) {
+            if (in_array($result->status, [Status::Fail, Status::Unknown], true)) {
+                return self::FAILURE;
+            }
+        }
+
+        return self::SUCCESS;
+    }
+
+    /** @param list<\Canopy\Inventory\ProjectTarget> $projects */
+    private function executeAssets(
+        InputInterface $input,
+        OutputInterface $output,
+        SymfonyStyle $io,
+        array $projects,
+        string $format,
+    ): int {
+        $profileOption = $input->getOption('profile');
+        $profilePath = is_string($profileOption) ? $profileOption : dirname(__DIR__, 2) . '/config/assets/nics.yml';
+        if (!str_starts_with($profilePath, DIRECTORY_SEPARATOR)) {
+            $profilePath = (string) getcwd() . DIRECTORY_SEPARATOR . $profilePath;
+        }
+        try {
+            $profile = $this->assetProfileLoader->load($profilePath);
+            $results = $this->assetAuditor->audit($projects, $profile);
+        } catch (\InvalidArgumentException $exception) {
+            $io->error($exception->getMessage());
+            return self::INVALID;
+        }
+        if ($format === 'json') {
+            $document = $this->resultDocument->build('media_file_asset_audit', $projects, $results);
+            $output->writeln(json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+        } else {
+            $this->assetConsoleRenderer->render($output, $results);
+        }
+        foreach ($results as $result) {
+            if (in_array($result->status, [Status::Fail, Status::Unknown], true)) {
+                return self::FAILURE;
+            }
+        }
         return self::SUCCESS;
     }
 }
