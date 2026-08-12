@@ -1,0 +1,5 @@
+id: image
+label: Image
+source: image
+source_configuration:
+  source_field: field_media_image

@@ -1,0 +1,6 @@
+id: media.field_media_file
+entity_type: media
+field_name: field_media_file
+type: file
+settings:
+  uri_scheme: private

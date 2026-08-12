@@ -1,0 +1,6 @@
+id: media.document.field_media_file
+field_name: field_media_file
+entity_type: media
+bundle: document
+settings:
+  file_extensions: 'pdf doc docx odt'

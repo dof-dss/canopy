@@ -1,0 +1,5 @@
+id: document
+label: Document
+source: file
+source_configuration:
+  source_field: field_media_file
