@@ -55,10 +55,10 @@ Every deterministic check must return one of:
 Missing Docker access, a database, credentials, or network permission must
 never be presented as a pass.
 
-## Proposed usage
+## Usage
 
-The first implemented audit pack statically inspects committed Solr configsets
-across one or more projects:
+The implemented audit packs statically inspect committed configuration across
+one or more projects. Audit Solr configsets with:
 
 ```shell
 bin/canopy audit solr --project=/path/to/drupal-project
@@ -88,6 +88,41 @@ Canopy treats configset mismatches against those declared expectations as
 failures rather than assuming every project belongs to the same Solr baseline.
 It does not yet start DDEV, connect to Solr, bootstrap Drupal, or claim runtime
 and indexing health.
+
+Audit the exported Drupal configuration against the NICS editorial capability
+profile with:
+
+```shell
+bin/canopy audit editorial --project=/path/to/drupal-project
+bin/canopy audit editorial \
+  --inventory=config/inventories/nics-drupal.example.yml
+bin/canopy audit editorial \
+  --inventory=config/inventories/nics-drupal.example.yml \
+  --profile=/path/to/editorial-profile.yml \
+  --format=json
+```
+
+This discovers both root `config/sync` exports and Unity-family
+`project/config/*/config` site exports. The bundled profile is derived from the
+shared DEPT and NIDirect editorial capabilities while allowing equivalent
+implementations, such as Scheduler or Scheduled Transitions. It inspects
+exported configuration only; it does not prove active-configuration parity or
+that a workflow is usable at runtime.
+
+Audit media and file-asset configuration, with separate results for every
+discovered demo/site, using:
+
+```shell
+bin/canopy audit assets \
+  --inventory=config/inventories/nics-drupal.example.yml
+bin/canopy audit assets \
+  --project=unity4=/path/to/unity4 \
+  --format=json
+```
+
+The asset profile covers reusable image/document media, source-field wiring,
+upload extension allowlists, image derivatives, responsive images, and private
+file storage. See the [media and file asset audit guide](docs/asset-audit.md).
 
 The executable also provides an `about` command:
 
@@ -120,6 +155,8 @@ broader credentials than the checks themselves.
 See [the architecture notes](docs/architecture.md) and the initial
 [result schema](schemas/result.schema.json). The implemented checks and their
 limitations are documented in the [Solr audit guide](docs/solr-audit.md).
+The capability model and editorial evidence boundaries are documented in the
+[editorial audit guide](docs/editorial-audit.md).
 
 ## Development
 
