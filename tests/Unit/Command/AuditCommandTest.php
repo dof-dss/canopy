@@ -10,6 +10,31 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class AuditCommandTest extends TestCase
 {
+    public function testListsAvailableAuditPacksWithoutAProject(): void
+    {
+        $tester = new CommandTester((new Application())->find('audit'));
+
+        $exitCode = $tester->execute(['--list' => true]);
+        $display = $tester->getDisplay();
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Available audit packs', $display);
+        self::assertStringContainsString('solr', $display);
+        self::assertStringContainsString('editorial', $display);
+        self::assertStringContainsString('assets', $display);
+        self::assertStringContainsString('Inspect Solr versions', $display);
+    }
+
+    public function testSuggestsListingPacksWhenPackIsMissing(): void
+    {
+        $tester = new CommandTester((new Application())->find('audit'));
+
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(2, $exitCode);
+        self::assertStringContainsString('--list', $tester->getDisplay());
+    }
+
     public function testEmitsSchemaCompatibleJsonForAStaticSolrAudit(): void
     {
         $root = dirname(__DIR__, 2) . '/Fixtures/modern';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Canopy\Command;
 
+use Canopy\Audit\AuditPackRegistry;
 use Canopy\Asset\AssetAuditor;
 use Canopy\Asset\AssetProfileLoader;
 use Canopy\Editorial\EditorialAuditor;
@@ -40,6 +41,7 @@ final class AuditCommand extends Command
         private readonly AssetAuditor $assetAuditor = new AssetAuditor(),
         private readonly AssetProfileLoader $assetProfileLoader = new AssetProfileLoader(),
         private readonly AssetConsoleRenderer $assetConsoleRenderer = new AssetConsoleRenderer(),
+        private readonly AuditPackRegistry $packRegistry = new AuditPackRegistry(),
     ) {
         parent::__construct();
     }
@@ -47,7 +49,8 @@ final class AuditCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('pack', InputArgument::REQUIRED, 'Audit pack to run: solr, editorial, or assets')
+            ->addArgument('pack', InputArgument::OPTIONAL, 'Audit pack to run')
+            ->addOption('list', 'l', InputOption::VALUE_NONE, 'List the available audit packs')
             ->addOption(
                 'project',
                 'p',
@@ -70,8 +73,27 @@ final class AuditCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $pack = $input->getArgument('pack');
 
-        if (!in_array($pack, ['solr', 'editorial', 'assets'], true)) {
-            $io->error(sprintf('Unknown audit pack "%s". Available packs: solr, editorial, assets.', is_scalar($pack) ? (string) $pack : ''));
+        if ((bool) $input->getOption('list')) {
+            $io->title('Available audit packs');
+            $rows = [];
+            foreach ($this->packRegistry->all() as $id => $description) {
+                $rows[] = [$id, $description];
+            }
+            $io->table(['Pack', 'Description'], $rows);
+            return self::SUCCESS;
+        }
+
+        if (!is_string($pack) || $pack === '') {
+            $io->error('Specify an audit pack, or use --list to see the available packs.');
+            return self::INVALID;
+        }
+
+        if (!$this->packRegistry->has($pack)) {
+            $io->error(sprintf(
+                'Unknown audit pack "%s". Available packs: %s.',
+                $pack,
+                implode(', ', $this->packRegistry->ids()),
+            ));
             return self::INVALID;
         }
 
