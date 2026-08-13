@@ -58,15 +58,22 @@ never be presented as a pass.
 ## Usage
 
 The implemented audit packs statically inspect committed configuration across
-one or more projects. Audit Solr configsets with:
+one or more projects. A consuming project can own its baseline in
+`.canopy/inventory.yml`; Canopy discovers that file when run from the project
+root without `--project` or `--inventory`. Audit Solr configsets with:
 
 ```shell
 bin/canopy audit solr --project=/path/to/drupal-project
 bin/canopy audit solr \
   --project=unity1=/path/to/unity \
   --project=unity2=/path/to/unity2
-bin/canopy audit solr --inventory=config/inventories/nics-drupal.example.yml
+bin/canopy audit solr --inventory=config/inventories/example.yml
 ```
+
+For example, NIDirect can copy the
+[consumer inventory template](docs/examples/nidirect-inventory.yml) to
+`.canopy/inventory.yml` in its own repository. This keeps the real baseline and
+future project exceptions with the project that owns them.
 
 Use `--format=json` for the complete machine-readable evidence. Canopy does not
 execute code from an audited repository by default. The Unity-family projects
@@ -74,7 +81,7 @@ provide their own additional static verifier; explicitly enable it with:
 
 ```shell
 bin/canopy audit solr \
-  --inventory=config/inventories/nics-drupal.example.yml \
+  --inventory=config/inventories/example.yml \
   --run-project-verifier
 ```
 
@@ -95,9 +102,9 @@ profile with:
 ```shell
 bin/canopy audit editorial --project=/path/to/drupal-project
 bin/canopy audit editorial \
-  --inventory=config/inventories/nics-drupal.example.yml
+  --inventory=config/inventories/example.yml
 bin/canopy audit editorial \
-  --inventory=config/inventories/nics-drupal.example.yml \
+  --inventory=config/inventories/example.yml \
   --profile=/path/to/editorial-profile.yml \
   --format=json
 ```
@@ -114,7 +121,7 @@ discovered demo/site, using:
 
 ```shell
 bin/canopy audit assets \
-  --inventory=config/inventories/nics-drupal.example.yml
+  --inventory=config/inventories/example.yml
 bin/canopy audit assets \
   --project=unity4=/path/to/unity4 \
   --format=json
@@ -178,3 +185,20 @@ composer verify
 ```
 
 The repository is licensed under the [MIT License](LICENSE).
+
+## Security and publication
+
+Canopy source is designed to be suitable for public development, but an audit
+result is not automatically suitable for publication. Results may describe
+site names, versions, configured capabilities, and missing controls. JSON
+output omits repository paths and applies bounded secret redaction by default;
+callers must still classify and protect reports according to the audited
+target.
+
+Real inventories, project exceptions, credentials, internal hostnames, and
+generated reports must remain in consuming projects with appropriate access.
+Use neutral project IDs when a report may leave the development team. See the
+[output security guidance](docs/output-security.md) and [security policy](SECURITY.md).
+Repository administrators should also complete the
+[public repository checklist](docs/public-repository-checklist.md) before
+changing visibility.

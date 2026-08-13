@@ -10,11 +10,11 @@ site to have byte-identical configuration.
 From a Canopy checkout:
 
 ```shell
-bin/canopy audit editorial --project=dept=~/dof-dss/dept
+bin/canopy audit editorial --project=site-a=~/projects/site-a
 bin/canopy audit editorial \
-  --inventory=config/inventories/nics-drupal.example.yml
+  --inventory=config/inventories/example.yml
 bin/canopy audit editorial \
-  --inventory=config/inventories/nics-drupal.example.yml \
+  --inventory=config/inventories/example.yml \
   --format=json
 ```
 

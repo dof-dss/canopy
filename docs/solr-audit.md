@@ -12,6 +12,10 @@ Audit the current project:
 bin/canopy audit solr
 ```
 
+If the current project contains `.canopy/inventory.yml`, Canopy loads its
+stable ID and expectations automatically. Explicit `--project` or `--inventory`
+arguments take precedence.
+
 Audit named projects:
 
 ```shell
@@ -24,7 +28,7 @@ Audit an inventory and emit structured evidence:
 
 ```shell
 bin/canopy audit solr \
-  --inventory=config/inventories/nics-drupal.example.yml \
+  --inventory=config/inventories/example.yml \
   --format=json
 ```
 
@@ -53,6 +57,19 @@ still present, and a failure when it is absent. Without expectations, Canopy
 records declarations and warns about ambiguity rather than imposing another
 project family's baseline.
 
+## Where inventory belongs
+
+The consuming project should own its `.canopy/inventory.yml`. That makes the
+project's baseline and justified exceptions reviewable with the configuration
+they describe. Canopy owns the inventory contract, generic examples, and
+reusable capability profiles; it should not become the source of truth for
+every estate target.
+
+The [NIDirect template](examples/nidirect-inventory.yml) reflects its current
+single-repository Solr 8.11 expectation. Copy it into the NIDirect repository
+as `.canopy/inventory.yml`; do not run the documentation copy directly because
+relative paths are resolved from the inventory file's directory.
+
 ## Supported configset layouts
 
 - `.platform/solr_configsets/<site>/conf` for per-site configsets.
@@ -70,7 +87,7 @@ project family's baseline.
 | `solr.configset.completeness` | Requires `schema.xml` and `solrconfig.xml`; records content and manifest SHA-256 fingerprints. |
 | `solr.configset.compatibility_metadata` | Reads `solrcore.properties` and compares `solr.luceneMatchVersion` with any explicit expectation. |
 | `solr.configset.source_parity` | Compares duplicate hosted/local sources by relative filename and content hash. Differences are warnings because they may be intentional. |
-| `solr.project_verifier` | Explicitly executes and classifies a trusted project verifier. Missing verifiers are skipped. |
+| `solr.project_verifier` | Explicitly executes and classifies a trusted project verifier with a stripped environment. Symlinked or missing verifiers are not run. |
 | `solr.estate.configset_structure` | Groups configsets by file manifest and warns when structural variants exist. |
 | `solr.estate.lucene_compatibility` | Groups declared Lucene versions and configsets without compatibility metadata. |
 

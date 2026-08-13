@@ -1,0 +1,6 @@
+projects:
+  - id: consumer-project
+    path: ..
+    expectations:
+      solr:
+        version: '8.11'

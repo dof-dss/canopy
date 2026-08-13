@@ -8,11 +8,11 @@ in a shared Unity repository remain visible and attributable.
 ## Run it
 
 ```shell
-bin/canopy audit assets --project=dept=~/dof-dss/dept
+bin/canopy audit assets --project=site-a=~/projects/site-a
 bin/canopy audit assets \
-  --inventory=config/inventories/nics-drupal.example.yml
+  --inventory=config/inventories/example.yml
 bin/canopy audit assets \
-  --inventory=config/inventories/nics-drupal.example.yml \
+  --inventory=config/inventories/example.yml \
   --format=json
 ```
 
