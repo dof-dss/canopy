@@ -1,0 +1,8 @@
+# Copy this template to .canopy/inventory.yml in the NIDirect repository.
+# The path is resolved relative to .canopy/, so `..` selects the project root.
+projects:
+  - id: nidirect
+    path: ..
+    expectations:
+      solr:
+        version: '8.11'

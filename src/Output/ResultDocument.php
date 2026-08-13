@@ -8,9 +8,14 @@ use Canopy\Application;
 use Canopy\Inventory\ProjectTarget;
 use Canopy\Result\Result;
 use Canopy\Result\Status;
+use Canopy\Security\OutputRedactor;
 
 final class ResultDocument
 {
+    public function __construct(private readonly OutputRedactor $redactor = new OutputRedactor())
+    {
+    }
+
     /**
      * @param list<ProjectTarget> $projects
      * @param list<Result> $results
@@ -20,6 +25,7 @@ final class ResultDocument
     public function build(string $kind, array $projects, array $results): array
     {
         $summary = array_fill_keys(array_column(Status::cases(), 'value'), 0);
+        $sensitivePaths = array_map(static fn (ProjectTarget $project): string => $project->path, $projects);
 
         foreach ($results as $result) {
             ++$summary[$result->status->value];
@@ -38,13 +44,18 @@ final class ResultDocument
                     ? $projects[0]->id
                     : ucwords(str_replace('_', ' ', $kind)) . ' estate',
                 'repositories' => array_map(
-                    static fn (ProjectTarget $project): array => ['id' => $project->id, 'path' => $project->path],
+                    static fn (ProjectTarget $project): array => ['id' => $project->id],
                     $projects,
                 ),
             ],
+            'redaction' => [
+                'policy' => 'public-safe-default',
+                'repository_paths' => 'omitted',
+                'sensitive_values' => 'redacted',
+            ],
             'summary' => $summary,
             'results' => array_map(
-                static fn (Result $result): array => $result->toArray(),
+                fn (Result $result): array => $this->redactor->value($result->toArray(), $sensitivePaths),
                 $results,
             ),
         ];

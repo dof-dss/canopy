@@ -6,7 +6,9 @@
 /.phpstan.cache/
 /build/
 /coverage/
-/.audit/results/
+/.audit/
+/canopy-audit*.json
+/canopy-audit*.html
 
 # Local IDE and editor files.
 /.idea/

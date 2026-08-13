@@ -1,0 +1,17 @@
+# Synthetic example only. Keep real estate inventories, exceptions, hostnames,
+# and generated audit results in an appropriately controlled consuming project.
+projects:
+  - id: site-a
+    path: ~/projects/site-a
+    expectations: &supported_solr
+      solr:
+        version: '9.9'
+        lucene_match_version: '9.12.2'
+  - id: site-b
+    path: ~/projects/site-b
+    expectations: *supported_solr
+  - id: legacy-site
+    path: ~/projects/legacy-site
+    expectations:
+      solr:
+        version: '8.11'

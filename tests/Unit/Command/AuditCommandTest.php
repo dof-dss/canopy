@@ -28,6 +28,9 @@ final class AuditCommandTest extends TestCase
         self::assertSame('1.0', $document['schema_version']);
         self::assertSame('solr_audit', $document['kind']);
         self::assertSame('modern', $document['project']['name']);
+        self::assertSame([['id' => 'modern']], $document['project']['repositories']);
+        self::assertSame('public-safe-default', $document['redaction']['policy']);
+        self::assertStringNotContainsString($root, $tester->getDisplay());
         self::assertSame(1, $document['summary']['skipped']);
         self::assertNotEmpty($document['results']);
     }

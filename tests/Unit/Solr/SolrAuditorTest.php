@@ -46,7 +46,13 @@ final class SolrAuditorTest extends TestCase
     public function testExplicitlyRunsAndClassifiesAProjectOwnedVerifier(): void
     {
         $root = dirname(__DIR__, 2) . '/Fixtures/modern';
-        $audit = (new SolrAuditor())->audit(new ProjectTarget('modern', $root), true);
+        putenv('CANOPY_TEST_INHERITED_SECRET=must-not-be-visible');
+
+        try {
+            $audit = (new SolrAuditor())->audit(new ProjectTarget('modern', $root), true);
+        } finally {
+            putenv('CANOPY_TEST_INHERITED_SECRET');
+        }
 
         self::assertSame(Status::Pass, $this->statusFor($audit->results, 'solr.project_verifier'));
         self::assertSame(Status::Warn, $this->statusFor($audit->results, 'solr.project_verifier.notice'));

@@ -7,6 +7,7 @@ namespace Canopy\Solr;
 use Canopy\Inventory\ProjectTarget;
 use Canopy\Result\Result;
 use Canopy\Result\Status;
+use Canopy\Security\OutputRedactor;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
@@ -17,6 +18,7 @@ final readonly class SolrAuditor
     public function __construct(
         private ConfigsetDiscovery $discovery = new ConfigsetDiscovery(),
         private ServiceVersionInspector $serviceVersions = new ServiceVersionInspector(),
+        private OutputRedactor $redactor = new OutputRedactor(),
     ) {
     }
 
@@ -288,8 +290,20 @@ final readonly class SolrAuditor
             )];
         }
 
+        if (is_link($script)) {
+            return [new Result(
+                'solr.project_verifier',
+                Status::Unknown,
+                $project->id,
+                'The project-owned Solr verifier is a symbolic link and was not executed.',
+                $observedAt,
+                ['path' => $relativePath],
+                'Replace the symbolic link with a reviewed, repository-owned executable file.',
+            )];
+        }
+
         $startedAt = microtime(true);
-        $process = new Process([$script], $project->path);
+        $process = new Process([$script], $project->path, $this->restrictedEnvironment());
         $process->setTimeout(120);
 
         try {
@@ -313,10 +327,10 @@ final readonly class SolrAuditor
 
         foreach ($lines as $line) {
             if (str_starts_with($line, 'NOTICE: ')) {
-                $notices[] = substr($line, 8);
+                $notices[] = $this->redactor->text(substr($line, 8), [$project->path]);
             }
             if (str_starts_with($line, 'ERROR: ')) {
-                $errors[] = substr($line, 7);
+                $errors[] = $this->redactor->text(substr($line, 7), [$project->path]);
             }
         }
 
@@ -355,5 +369,20 @@ final readonly class SolrAuditor
         }
 
         return $results;
+    }
+
+    /** @return array<string, string|false> */
+    private function restrictedEnvironment(): array
+    {
+        $environment = getenv();
+        $restricted = array_fill_keys(array_keys($environment), false);
+        $path = getenv('PATH');
+
+        $restricted['PATH'] = is_string($path) && $path !== '' ? $path : '/usr/local/bin:/usr/bin:/bin';
+        $restricted['LANG'] = 'C';
+        $restricted['LC_ALL'] = 'C';
+        $restricted['CANOPY_VERIFIER_MODE'] = 'read-only';
+
+        return $restricted;
     }
 }

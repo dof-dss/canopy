@@ -8,6 +8,8 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ProjectInventoryLoader
 {
+    public const PROJECT_INVENTORY = '.canopy/inventory.yml';
+
     /**
      * @param list<string> $projectValues
      *
@@ -16,6 +18,15 @@ final class ProjectInventoryLoader
     public function load(array $projectValues, ?string $inventoryPath, string $workingDirectory): array
     {
         $definitions = [];
+
+        if ($projectValues === [] && $inventoryPath === null) {
+            $projectInventory = rtrim($workingDirectory, DIRECTORY_SEPARATOR)
+                . DIRECTORY_SEPARATOR
+                . self::PROJECT_INVENTORY;
+            if (is_file($projectInventory)) {
+                $inventoryPath = $projectInventory;
+            }
+        }
 
         foreach ($projectValues as $value) {
             $definitions[] = $this->parseCommandLineDefinition($value);
