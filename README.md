@@ -60,7 +60,14 @@ never be presented as a pass.
 The implemented audit packs statically inspect committed configuration across
 one or more projects. A consuming project can own its baseline in
 `.canopy/inventory.yml`; Canopy discovers that file when run from the project
-root without `--project` or `--inventory`. Audit Solr configsets with:
+root without `--project` or `--inventory`. List the packs available in the
+installed version of Canopy with:
+
+```shell
+bin/canopy audit --list
+```
+
+Audit Solr configsets with:
 
 ```shell
 bin/canopy audit solr --project=/path/to/drupal-project
