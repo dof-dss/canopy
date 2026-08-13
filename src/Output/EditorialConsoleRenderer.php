@@ -6,11 +6,17 @@ namespace Canopy\Output;
 
 use Canopy\Result\Result;
 use Canopy\Result\Status;
+use Canopy\Security\OutputRedactor;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class EditorialConsoleRenderer
 {
+    public function __construct(private readonly OutputRedactor $redactor = new OutputRedactor())
+    {
+    }
+
     /** @param list<Result> $results */
     public function render(OutputInterface $output, array $results): void
     {
@@ -29,7 +35,7 @@ final class EditorialConsoleRenderer
         $table = new Table($output);
         $table->setHeaders(['Site', 'Pass', 'Warn', 'Fail', 'Unknown', 'Skipped']);
         foreach ($targets as $target => $counts) {
-            $table->addRow([$target, $counts['pass'], $counts['warn'], $counts['fail'], $counts['unknown'], $counts['skipped']]);
+            $table->addRow([$this->safe($target), $counts['pass'], $counts['warn'], $counts['fail'], $counts['unknown'], $counts['skipped']]);
         }
         $table->render();
 
@@ -46,8 +52,18 @@ final class EditorialConsoleRenderer
         $findingsTable = new Table($output);
         $findingsTable->setHeaders(['Status', 'Capability/check', 'Target', 'Summary']);
         foreach ($findings as $finding) {
-            $findingsTable->addRow([$finding->status->value, $finding->checkId, $finding->target, $finding->summary]);
+            $findingsTable->addRow([
+                $this->safe($finding->status->value),
+                $this->safe($finding->checkId),
+                $this->safe($finding->target),
+                $this->safe($finding->summary),
+            ]);
         }
         $findingsTable->render();
+    }
+
+    private function safe(string $value): string
+    {
+        return OutputFormatter::escape($this->redactor->text($value));
     }
 }

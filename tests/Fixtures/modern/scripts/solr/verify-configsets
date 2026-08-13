@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ -n "${CANOPY_TEST_INHERITED_SECRET:-}" ]]; then
+  echo "ERROR: inherited environment was visible"
+  exit 1
+fi
+
 echo "NOTICE: example has hosting but no committed connector."
 echo "Solr configset verification passed for 1 declared site(s)."

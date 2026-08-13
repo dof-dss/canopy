@@ -60,7 +60,7 @@ final class AuditCommand extends Command
                 'run-project-verifier',
                 null,
                 InputOption::VALUE_NONE,
-                'Explicitly execute scripts/solr/verify-configsets when present',
+                'Execute a reviewed, trusted scripts/solr/verify-configsets with a stripped environment',
             )
             ->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Output format: console or json', 'console');
     }

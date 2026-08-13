@@ -34,9 +34,29 @@
             "properties": {
                 "name": {"type": "string"},
                 "repository": {"type": "string"},
-                "revision": {"type": "string"}
+                "revision": {"type": "string"},
+                "repositories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["id"],
+                        "properties": {
+                            "id": {"type": "string"}
+                        },
+                        "additionalProperties": false
+                    }
+                }
             },
             "additionalProperties": true
+        },
+        "redaction": {
+            "type": "object",
+            "properties": {
+                "policy": {"const": "public-safe-default"},
+                "repository_paths": {"const": "omitted"},
+                "sensitive_values": {"const": "redacted"}
+            },
+            "additionalProperties": false
         },
         "summary": {
             "type": "object",
