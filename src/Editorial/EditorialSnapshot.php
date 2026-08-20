@@ -15,6 +15,9 @@ final readonly class EditorialSnapshot
      * @param list<string> $fieldNames
      * @param list<string> $pathautoPatterns
      * @param list<string> $metatagDefaults
+     * @param array<string, list<string>> $ckeditor5Toolbars
+     * @param array<string, array{enabled: bool, filters: list<string>}> $textFormats
+     * @param list<string> $configEntities
      */
     public function __construct(
         public EditorialSite $site,
@@ -26,6 +29,9 @@ final readonly class EditorialSnapshot
         public array $fieldNames,
         public array $pathautoPatterns,
         public array $metatagDefaults,
+        public array $ckeditor5Toolbars,
+        public array $textFormats,
+        public array $configEntities,
     ) {
     }
 }

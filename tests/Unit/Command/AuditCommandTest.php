@@ -80,6 +80,52 @@ final class AuditCommandTest extends TestCase
         self::assertNotEmpty($document['results']);
     }
 
+    public function testEditorialConsoleCanShowDetailedResults(): void
+    {
+        $root = dirname(__DIR__, 2) . '/Fixtures/editorial';
+        $tester = new CommandTester((new Application())->find('audit'));
+
+        $exitCode = $tester->execute([
+            'pack' => 'editorial',
+            '--project' => ['example=' . $root],
+            '--detail' => true,
+        ]);
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Detailed results', $tester->getDisplay());
+        self::assertStringContainsString('editorial.capability.basic_html_text_format', $tester->getDisplay());
+    }
+
+    public function testEditorialResultsCanBeFilteredToUnknownStatus(): void
+    {
+        $tester = new CommandTester((new Application())->find('audit'));
+
+        $exitCode = $tester->execute([
+            'pack' => 'editorial',
+            '--project' => ['missing=' . sys_get_temp_dir() . '/canopy-missing-project'],
+            '--status' => ['unknown'],
+        ]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('editorial.project.access', $tester->getDisplay());
+        self::assertStringNotContainsString('editorial.inventory.summary', $tester->getDisplay());
+    }
+
+    public function testRejectsUnknownStatusFilter(): void
+    {
+        $root = dirname(__DIR__, 2) . '/Fixtures/editorial';
+        $tester = new CommandTester((new Application())->find('audit'));
+
+        $exitCode = $tester->execute([
+            'pack' => 'editorial',
+            '--project' => ['example=' . $root],
+            '--status' => ['broken'],
+        ]);
+
+        self::assertSame(2, $exitCode);
+        self::assertStringContainsString('Unknown result status', $tester->getDisplay());
+    }
+
     public function testEmitsPerSiteMediaFileAssetAuditJson(): void
     {
         $root = dirname(__DIR__, 2) . '/Fixtures/assets';

@@ -65,7 +65,14 @@ final class AuditCommand extends Command
                 InputOption::VALUE_NONE,
                 'Execute a reviewed, trusted scripts/solr/verify-configsets with a stripped environment',
             )
-            ->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Output format: console or json', 'console');
+            ->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Output format: console or json', 'console')
+            ->addOption(
+                'status',
+                's',
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Filter editorial console or JSON results by status; repeat or use commas',
+            )
+            ->addOption('detail', 'd', InputOption::VALUE_NONE, 'Show every editorial capability result in console output');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -103,6 +110,13 @@ final class AuditCommand extends Command
             return self::INVALID;
         }
 
+        try {
+            $selectedStatuses = $this->selectedStatuses($input);
+        } catch (\InvalidArgumentException $exception) {
+            $io->error($exception->getMessage());
+            return self::INVALID;
+        }
+
         $projectValues = $input->getOption('project');
         $inventoryPath = $input->getOption('inventory');
 
@@ -118,10 +132,10 @@ final class AuditCommand extends Command
         }
 
         if ($pack === 'editorial') {
-            return $this->executeEditorial($input, $output, $io, $projects, $format);
+            return $this->executeEditorial($input, $output, $io, $projects, $format, $selectedStatuses);
         }
         if ($pack === 'assets') {
-            return $this->executeAssets($input, $output, $io, $projects, $format);
+            return $this->executeAssets($input, $output, $io, $projects, $format, $selectedStatuses);
         }
 
         $audits = [];
@@ -137,11 +151,15 @@ final class AuditCommand extends Command
         $estateResults = $this->estateSummary->results($audits);
         array_push($results, ...$estateResults);
 
+        $displayResults = $this->filterResults($results, $selectedStatuses);
         if ($format === 'json') {
-            $document = $this->resultDocument->build('solr_audit', $projects, $results);
+            $document = $this->resultDocument->build('solr_audit', $projects, $displayResults);
             $json = json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
             $output->writeln($json);
         } else {
+            if ($selectedStatuses !== []) {
+                $io->note('Status filtering is available for structured JSON and editorial console reports.');
+            }
             $this->consoleRenderer->render($output, $audits, $estateResults);
         }
 
@@ -154,13 +172,17 @@ final class AuditCommand extends Command
         return self::SUCCESS;
     }
 
-    /** @param list<\Canopy\Inventory\ProjectTarget> $projects */
+    /**
+     * @param list<\Canopy\Inventory\ProjectTarget> $projects
+     * @param list<Status> $selectedStatuses
+     */
     private function executeEditorial(
         InputInterface $input,
         OutputInterface $output,
         SymfonyStyle $io,
         array $projects,
         string $format,
+        array $selectedStatuses,
     ): int {
         $profileOption = $input->getOption('profile');
         $profilePath = is_string($profileOption)
@@ -178,12 +200,18 @@ final class AuditCommand extends Command
             return self::INVALID;
         }
 
+        $displayResults = $this->filterResults($results, $selectedStatuses);
         if ($format === 'json') {
-            $document = $this->resultDocument->build('editorial_capability_audit', $projects, $results);
+            $document = $this->resultDocument->build('editorial_capability_audit', $projects, $displayResults);
             $json = json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
             $output->writeln($json);
         } else {
-            $this->editorialConsoleRenderer->render($output, $results);
+            $this->editorialConsoleRenderer->render(
+                $output,
+                $displayResults,
+                (bool) $input->getOption('detail'),
+                $selectedStatuses !== [],
+            );
         }
 
         foreach ($results as $result) {
@@ -195,13 +223,17 @@ final class AuditCommand extends Command
         return self::SUCCESS;
     }
 
-    /** @param list<\Canopy\Inventory\ProjectTarget> $projects */
+    /**
+     * @param list<\Canopy\Inventory\ProjectTarget> $projects
+     * @param list<Status> $selectedStatuses
+     */
     private function executeAssets(
         InputInterface $input,
         OutputInterface $output,
         SymfonyStyle $io,
         array $projects,
         string $format,
+        array $selectedStatuses,
     ): int {
         $profileOption = $input->getOption('profile');
         $profilePath = is_string($profileOption) ? $profileOption : dirname(__DIR__, 2) . '/config/assets/nics.yml';
@@ -215,10 +247,14 @@ final class AuditCommand extends Command
             $io->error($exception->getMessage());
             return self::INVALID;
         }
+        $displayResults = $this->filterResults($results, $selectedStatuses);
         if ($format === 'json') {
-            $document = $this->resultDocument->build('media_file_asset_audit', $projects, $results);
+            $document = $this->resultDocument->build('media_file_asset_audit', $projects, $displayResults);
             $output->writeln(json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
         } else {
+            if ($selectedStatuses !== []) {
+                $io->note('Status filtering is available for structured JSON and editorial console reports.');
+            }
             $this->assetConsoleRenderer->render($output, $results);
         }
         foreach ($results as $result) {
@@ -227,5 +263,51 @@ final class AuditCommand extends Command
             }
         }
         return self::SUCCESS;
+    }
+
+    /** @return list<Status> */
+    private function selectedStatuses(InputInterface $input): array
+    {
+        $configured = $input->getOption('status');
+        if (!is_array($configured)) {
+            return [];
+        }
+
+        $statuses = [];
+        foreach ($configured as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
+            foreach (explode(',', $value) as $name) {
+                $name = trim($name);
+                $status = Status::tryFrom($name);
+                if ($status === null) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'Unknown result status "%s". Available statuses: %s.',
+                        $name,
+                        implode(', ', array_column(Status::cases(), 'value')),
+                    ));
+                }
+                $statuses[$status->value] = $status;
+            }
+        }
+        return array_values($statuses);
+    }
+
+    /**
+     * @param list<Result> $results
+     * @param list<Status> $statuses
+     *
+     * @return list<Result>
+     */
+    private function filterResults(array $results, array $statuses): array
+    {
+        if ($statuses === []) {
+            return $results;
+        }
+        return array_values(array_filter(
+            $results,
+            static fn (Result $result): bool => in_array($result->status, $statuses, true),
+        ));
     }
 }

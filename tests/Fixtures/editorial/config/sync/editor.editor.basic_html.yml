@@ -1,0 +1,28 @@
+status: true
+format: basic_html
+editor: ckeditor5
+settings:
+  toolbar:
+    items:
+      - blockQuote
+      - superscript
+      - removeFormat
+      - '|'
+      - heading
+      - style
+      - insertTable
+      - '|'
+      - link
+      - bulletedList
+      - numberedList
+      - '|'
+      - drupalMedia
+      - location
+      - '|'
+      - undo
+      - redo
+      - '|'
+      - importWord
+      - specialCharacters
+      - textPartLanguage
+      - fullScreen

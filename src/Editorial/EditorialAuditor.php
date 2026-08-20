@@ -81,7 +81,17 @@ final readonly class EditorialAuditor
                 }
 
                 foreach ($profile->capabilities as $id => $definition) {
-                    $observation = $this->evaluator->evaluate($definition['detector'], $definition['values'], $snapshot, $definition['exclude']);
+                    $observation = $this->evaluator->evaluate(
+                        $definition['detector'],
+                        $definition['values'],
+                        $snapshot,
+                        $definition['exclude'],
+                        $definition['format'],
+                        $definition['core'],
+                        $definition['optional'],
+                        $definition['unexpected'],
+                        $definition['optional_reasons'],
+                    );
                     $status = $observation->satisfied
                         ? Status::Pass
                         : match ($definition['expectation']) {
@@ -118,6 +128,7 @@ final readonly class EditorialAuditor
                         'media_types' => $snapshot->mediaTypes,
                         'pathauto_pattern_count' => count($snapshot->pathautoPatterns),
                         'metatag_default_count' => count($snapshot->metatagDefaults),
+                        'text_formats' => array_keys($snapshot->textFormats),
                     ],
                 );
             }

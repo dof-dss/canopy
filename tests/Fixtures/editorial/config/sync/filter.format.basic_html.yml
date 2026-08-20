@@ -1,0 +1,10 @@
+status: true
+format: basic_html
+filters:
+  entity_embed: { status: true }
+  filter_allowed: { status: true }
+  filter_image_lazy_load: { status: true }
+  linkit: { status: true }
+  media_embed: { status: true }
+  noreferrer: { status: true }
+  token_filter: { status: true }

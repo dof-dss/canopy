@@ -20,10 +20,19 @@ capabilities:
     detector: workflow_states
     values: [draft, needs_review, published, archived]
   moderation_transitions:
-    label: Review, publishing, rejection, archival, and restoration paths
+    label: NICS editorial transition paths
     expectation: required
     detector: workflow_transitions
-    values: [submit_for_review, publish, reject, archive, restore]
+    values:
+      - archive
+      - create_new_draft
+      - draft_of_published
+      - publish
+      - quick_publish
+      - reject
+      - restore
+      - restore_to_draft
+      - submit_for_review
   role_separation:
     label: Author and publisher role separation
     expectation: required
@@ -38,11 +47,47 @@ capabilities:
     expectation: required
     detector: modules
     values: [pathauto, redirect]
+  url_management_configuration:
+    label: Alias patterns and redirect policy exports
+    expectation: required
+    detector: config_patterns
+    values: [pathauto.settings, 'pathauto.pattern.*', redirect.settings]
   metadata:
     label: Structured page metadata
     expectation: required
     detector: modules
     values: [metatag]
+  metadata_configuration:
+    label: Shared Metatag defaults
+    expectation: required
+    detector: config_patterns
+    values:
+      - metatag.metatag_defaults.global
+      - metatag.metatag_defaults.node
+      - metatag.metatag_defaults.front
+      - metatag.metatag_defaults.403
+      - metatag.metatag_defaults.404
+      - metatag.metatag_defaults.taxonomy_term
+      - metatag.metatag_defaults.user
+  schema_metadata_extension:
+    label: Schema.org metadata extension
+    expectation: optional
+    detector: modules
+    values: [schema_metatag]
+  xml_sitemap:
+    label: XML sitemap generation
+    expectation: required
+    detector: modules
+    values: [simple_sitemap]
+  xml_sitemap_configuration:
+    label: XML sitemap settings, variants, types, and bundle policy exports
+    expectation: required
+    detector: config_patterns
+    values:
+      - simple_sitemap.settings
+      - 'simple_sitemap.sitemap.*'
+      - 'simple_sitemap.type.*'
+      - 'simple_sitemap.bundle_settings.*'
   review_scheduling:
     label: Content review-date tracking
     expectation: preferred
@@ -51,10 +96,74 @@ capabilities:
   scheduled_publishing:
     label: Scheduled publishing
     expectation: required
-    detector: any_module
-    values: [scheduler, scheduled_transitions]
+    detector: modules
+    values: [scheduled_transitions]
+  scheduled_publishing_configuration:
+    label: Scheduled transition policy and cron exports
+    expectation: required
+    detector: config_patterns
+    values:
+      - scheduled_transitions.settings
+      - ultimate_cron.job.scheduled_transitions_cron
+  revision_comparison:
+    label: Revision comparison
+    expectation: required
+    detector: modules
+    values: [diff]
+  revision_comparison_configuration:
+    label: Revision comparison settings and displays
+    expectation: required
+    detector: config_patterns
+    values:
+      - diff.settings
+      - core.entity_view_mode.node.diff
+      - 'core.entity_view_display.node.*.diff'
   concurrent_editing_protection:
     label: Concurrent-edit protection
     expectation: required
     detector: any_module
     values: [content_lock, node_edit_protection]
+text_formats:
+  basic_html:
+    label: Basic HTML filtering policy
+    expectation: required
+    core_filters:
+      - entity_embed
+      - filter_allowed
+      - linkit
+      - media_embed
+      - noreferrer
+      - token_filter
+    optional_filters:
+      dept_abs2rel_url: DEPT rewrites absolute links for its multi-domain publishing model.
+      filter_image_lazy_load: NIDirect enables Drupal image lazy-loading for inline content.
+    unexpected: fail
+
+ckeditor5_toolbars:
+  basic_html:
+    label: Basic HTML CKEditor toolbar
+    expectation: required
+    core:
+      - blockQuote
+      - superscript
+      - removeFormat
+      - heading
+      - style
+      - insertTable
+      - link
+      - bulletedList
+      - numberedList
+      - drupalMedia
+      - undo
+      - redo
+      - importWord
+      - specialCharacters
+      - textPartLanguage
+      - fullScreen
+    optional:
+      anchor: DEPT exposes named anchors for long-form departmental content.
+      bold: DEPT exposes a toolbar button for bold text in addition to keyboard input.
+      chart: DEPT integrates its charting content model with CKEditor.
+      italic: DEPT exposes a toolbar button for italic text in addition to keyboard input.
+      location: NIDirect integrates location and map content with CKEditor.
+    unexpected: fail

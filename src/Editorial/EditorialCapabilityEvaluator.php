@@ -9,8 +9,21 @@ final class EditorialCapabilityEvaluator
     /**
      * @param list<string> $values
      * @param list<string> $exclude
+     * @param list<string> $core
+     * @param list<string> $optional
+     * @param array<string, string> $optionalReasons
      */
-    public function evaluate(string $detector, array $values, EditorialSnapshot $snapshot, array $exclude = []): CapabilityObservation
+    public function evaluate(
+        string $detector,
+        array $values,
+        EditorialSnapshot $snapshot,
+        array $exclude = [],
+        string $format = '',
+        array $core = [],
+        array $optional = [],
+        string $unexpected = 'fail',
+        array $optionalReasons = [],
+    ): CapabilityObservation
     {
         return match ($detector) {
             'moderated_bundles_revisioned' => $this->moderatedBundlesRevisioned($snapshot, $exclude),
@@ -22,8 +35,167 @@ final class EditorialCapabilityEvaluator
             'modules' => $this->containsValues('module', $snapshot->modules, $values),
             'any_module' => $this->containsAnyValue('module', $snapshot->modules, $values),
             'field_name_fragments' => $this->fieldFragments($snapshot, $values),
+            'config_patterns' => $this->configPatterns($snapshot, $values),
+            'text_format' => $this->textFormat($snapshot, $format, $core, $optional, $unexpected, $optionalReasons),
+            'ckeditor5_toolbar' => $this->ckeditor5Toolbar($snapshot, $format, $core, $optional, $unexpected, $optionalReasons),
             default => throw new \InvalidArgumentException(sprintf('Unknown editorial capability detector: %s', $detector)),
         };
+    }
+
+    /**
+     * @param list<string> $core
+     * @param list<string> $optional
+     * @param array<string, string> $optionalReasons
+     */
+    private function ckeditor5Toolbar(
+        EditorialSnapshot $snapshot,
+        string $format,
+        array $core,
+        array $optional,
+        string $unexpectedPolicy,
+        array $optionalReasons,
+    ): CapabilityObservation {
+        $observed = $snapshot->ckeditor5Toolbars[$format] ?? [];
+        $missingCore = array_values(array_diff($core, $observed));
+        $presentCore = array_values(array_intersect($core, $observed));
+        $presentOptional = array_values(array_intersect($optional, $observed));
+        $absentOptional = array_values(array_diff($optional, $observed));
+        $unexpected = array_values(array_diff($observed, $core, $optional));
+        sort($missingCore);
+        sort($presentCore);
+        sort($presentOptional);
+        sort($absentOptional);
+        sort($unexpected);
+        $registeredVariations = $this->variationReasons($presentOptional, $optionalReasons);
+        $variationSuffix = $presentOptional === [] ? '' : ' Registered variations: ' . implode(', ', $presentOptional) . '.';
+
+        $satisfied = isset($snapshot->ckeditor5Toolbars[$format])
+            && $missingCore === []
+            && ($unexpectedPolicy === 'allow' || $unexpected === []);
+        if (!isset($snapshot->ckeditor5Toolbars[$format])) {
+            $summary = sprintf('No enabled CKEditor 5 configuration was discovered for text format %s.', $format);
+        } elseif ($missingCore !== []) {
+            $summary = sprintf('Missing core CKEditor toolbar items for %s: %s.', $format, implode(', ', $missingCore)) . $variationSuffix;
+        } elseif ($unexpectedPolicy === 'fail' && $unexpected !== []) {
+            $summary = sprintf('Unexpected CKEditor toolbar items for %s: %s.', $format, implode(', ', $unexpected)) . $variationSuffix;
+        } else {
+            $summary = sprintf(
+                'CKEditor toolbar items for %s match policy.%s',
+                $format,
+                $variationSuffix,
+            );
+        }
+
+        return new CapabilityObservation($satisfied, $summary, [
+            'format' => $format,
+            'core' => ['present' => $presentCore, 'missing' => $missingCore],
+            'optional' => [
+                'present' => $presentOptional,
+                'absent' => $absentOptional,
+                'registered_variations' => $registeredVariations,
+            ],
+            'unexpected' => ['policy' => $unexpectedPolicy, 'items' => $unexpected],
+            'observed' => $observed,
+        ]);
+    }
+
+    /**
+     * @param list<string> $core
+     * @param list<string> $optional
+     * @param array<string, string> $optionalReasons
+     */
+    private function textFormat(
+        EditorialSnapshot $snapshot,
+        string $format,
+        array $core,
+        array $optional,
+        string $unexpectedPolicy,
+        array $optionalReasons,
+    ): CapabilityObservation {
+        $definition = $snapshot->textFormats[$format] ?? null;
+        $observed = $definition['filters'] ?? [];
+        $missingCore = array_values(array_diff($core, $observed));
+        $presentCore = array_values(array_intersect($core, $observed));
+        $presentOptional = array_values(array_intersect($optional, $observed));
+        $absentOptional = array_values(array_diff($optional, $observed));
+        $unexpected = array_values(array_diff($observed, $core, $optional));
+        sort($missingCore);
+        sort($presentCore);
+        sort($presentOptional);
+        sort($absentOptional);
+        sort($unexpected);
+        $registeredVariations = $this->variationReasons($presentOptional, $optionalReasons);
+        $variationSuffix = $presentOptional === [] ? '' : ' Registered variations: ' . implode(', ', $presentOptional) . '.';
+
+        $enabled = ($definition['enabled'] ?? false) === true;
+        $satisfied = $enabled
+            && $missingCore === []
+            && ($unexpectedPolicy === 'allow' || $unexpected === []);
+        if ($definition === null) {
+            $summary = sprintf('Text format %s was not discovered.', $format);
+        } elseif (!$enabled) {
+            $summary = sprintf('Text format %s is disabled.', $format);
+        } elseif ($missingCore !== []) {
+            $summary = sprintf('Text format %s is missing core filters: %s.', $format, implode(', ', $missingCore)) . $variationSuffix;
+        } elseif ($unexpectedPolicy === 'fail' && $unexpected !== []) {
+            $summary = sprintf('Text format %s has unexpected enabled filters: %s.', $format, implode(', ', $unexpected)) . $variationSuffix;
+        } else {
+            $summary = sprintf(
+                'Text format %s matches policy.%s',
+                $format,
+                $variationSuffix,
+            );
+        }
+
+        return new CapabilityObservation($satisfied, $summary, [
+            'format' => $format,
+            'enabled' => $enabled,
+            'core_filters' => ['present' => $presentCore, 'missing' => $missingCore],
+            'optional_filters' => [
+                'present' => $presentOptional,
+                'absent' => $absentOptional,
+                'registered_variations' => $registeredVariations,
+            ],
+            'unexpected_filters' => ['policy' => $unexpectedPolicy, 'items' => $unexpected],
+            'observed_filters' => $observed,
+        ]);
+    }
+
+    /** @param list<string> $requiredPatterns */
+    private function configPatterns(EditorialSnapshot $snapshot, array $requiredPatterns): CapabilityObservation
+    {
+        $matches = [];
+        $missing = [];
+        foreach ($requiredPatterns as $pattern) {
+            $patternMatches = array_values(array_filter(
+                $snapshot->configEntities,
+                static fn (string $id): bool => fnmatch($pattern, $id),
+            ));
+            if ($patternMatches === []) {
+                $missing[] = $pattern;
+            } else {
+                $matches[$pattern] = $patternMatches;
+            }
+        }
+
+        return new CapabilityObservation(
+            $missing === [],
+            $missing === []
+                ? 'All required exported configuration patterns are present.'
+                : sprintf('Missing exported configuration patterns: %s.', implode(', ', $missing)),
+            ['required_patterns' => $requiredPatterns, 'matches' => $matches, 'missing_patterns' => $missing],
+        );
+    }
+
+    /**
+     * @param list<string> $present
+     * @param array<string, string> $reasons
+     *
+     * @return array<string, string>
+     */
+    private function variationReasons(array $present, array $reasons): array
+    {
+        return array_intersect_key($reasons, array_fill_keys($present, true));
     }
 
     /** @param list<string> $exclude */

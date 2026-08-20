@@ -1,0 +1,2 @@
+automation:
+  cron_create_queue_items: true

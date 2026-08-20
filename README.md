@@ -118,10 +118,13 @@ bin/canopy audit editorial \
 
 This discovers both root `config/sync` exports and Unity-family
 `project/config/*/config` site exports. The bundled profile is derived from the
-shared DEPT and NIDirect editorial capabilities while allowing equivalent
-implementations, such as Scheduler or Scheduled Transitions. It inspects
-exported configuration only; it does not prove active-configuration parity or
-that a workflow is usable at runtime.
+shared DEPT and NIDirect editorial capabilities. It checks text formats,
+CKEditor, revisions, moderation, Diff, Metatag, XML sitemap, aliases, redirects,
+scheduled transitions, and related exported settings. Reviewed chart, map, and
+site-specific filter extensions are registered with reasons instead of being
+treated as universal requirements. It inspects exported configuration only; it
+does not prove active-configuration parity or that a workflow is usable at
+runtime.
 
 Audit media and file-asset configuration, with separate results for every
 discovered demo/site, using:

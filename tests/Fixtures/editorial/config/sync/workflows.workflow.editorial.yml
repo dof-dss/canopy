@@ -10,9 +10,13 @@ type_settings:
     published: { label: Published }
   transitions:
     archive: { label: Archive }
+    create_new_draft: { label: Create new draft }
+    draft_of_published: { label: Draft of published }
     publish: { label: Publish }
+    quick_publish: { label: Quick publish }
     reject: { label: Reject }
     restore: { label: Restore }
+    restore_to_draft: { label: Restore to draft }
     submit_for_review: { label: Submit for review }
   entity_types:
     node: [article, webform]

@@ -1,5 +1,6 @@
 module:
   content_moderation: 0
+  diff: 0
   media: 0
   media_library: 0
   metatag: 0
@@ -7,4 +8,5 @@ module:
   pathauto: 1
   redirect: 0
   scheduled_transitions: 0
+  simple_sitemap: 0
   workflows: 0

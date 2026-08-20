@@ -18,7 +18,7 @@ final class EditorialConsoleRenderer
     }
 
     /** @param list<Result> $results */
-    public function render(OutputInterface $output, array $results): void
+    public function render(OutputInterface $output, array $results, bool $detail = false, bool $filtered = false): void
     {
         $output->writeln('<info>Canopy editorial capability audit</info>');
         $output->writeln('Exported Drupal configuration only; active configuration and editorial usability were not inspected.');
@@ -39,16 +39,23 @@ final class EditorialConsoleRenderer
         }
         $table->render();
 
-        $findings = array_values(array_filter(
-            $results,
-            static fn (Result $result): bool => $result->status !== Status::Pass,
-        ));
+        $findings = $detail
+            ? $results
+            : array_values(array_filter(
+                $results,
+                static fn (Result $result): bool => $result->status !== Status::Pass,
+            ));
         if ($findings === []) {
-            $output->writeln("\n<info>No non-passing exported-configuration findings.</info>");
+            $message = $filtered
+                ? 'No exported-configuration results match the selected statuses.'
+                : 'No non-passing exported-configuration findings.';
+            $output->writeln("\n<info>" . $message . '</info>');
             return;
         }
 
-        $output->writeln("\n<comment>Findings and limitations</comment>");
+        $output->writeln($detail
+            ? "\n<comment>Detailed results</comment>"
+            : "\n<comment>Findings and limitations</comment>");
         $findingsTable = new Table($output);
         $findingsTable->setHeaders(['Status', 'Capability/check', 'Target', 'Summary']);
         foreach ($findings as $finding) {

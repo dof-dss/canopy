@@ -53,6 +53,13 @@ final class EditorialConfigInspector
         $fieldNames = $this->fieldNames($site->configPath);
         $pathautoPatterns = $this->ids($site->configPath . '/pathauto.pattern.*.yml', 'pathauto.pattern.');
         $metatagDefaults = $this->ids($site->configPath . '/metatag.metatag_defaults.*.yml', 'metatag.metatag_defaults.');
+        $ckeditor5Toolbars = $this->ckeditor5Toolbars($site->configPath);
+        $textFormats = $this->textFormats($site->configPath);
+        $configEntities = array_map(
+            static fn (string $path): string => basename($path, '.yml'),
+            $this->files($site->configPath . '/*.yml'),
+        );
+        sort($configEntities);
 
         $rolePermissions = [];
         foreach ($this->files($site->configPath . '/user.role.*.yml') as $path) {
@@ -75,6 +82,9 @@ final class EditorialConfigInspector
             $fieldNames,
             $pathautoPatterns,
             $metatagDefaults,
+            $ckeditor5Toolbars,
+            $textFormats,
+            $configEntities,
         );
     }
 
@@ -114,6 +124,61 @@ final class EditorialConfigInspector
         $names = array_values(array_unique($names));
         sort($names);
         return $names;
+    }
+
+    /** @return array<string, list<string>> */
+    private function ckeditor5Toolbars(string $configPath): array
+    {
+        $toolbars = [];
+        foreach ($this->files($configPath . '/editor.editor.*.yml') as $path) {
+            $config = $this->parse($path);
+            if (($config['status'] ?? false) !== true || ($config['editor'] ?? null) !== 'ckeditor5') {
+                continue;
+            }
+
+            $format = isset($config['format']) && is_string($config['format'])
+                ? $config['format']
+                : $this->configId($path, 'editor.editor.');
+            $settings = isset($config['settings']) && is_array($config['settings']) ? $config['settings'] : [];
+            $toolbar = isset($settings['toolbar']) && is_array($settings['toolbar']) ? $settings['toolbar'] : [];
+            $items = isset($toolbar['items']) && is_array($toolbar['items'])
+                ? array_values(array_filter(
+                    $toolbar['items'],
+                    static fn (mixed $item): bool => is_string($item) && $item !== '|',
+                ))
+                : [];
+            $items = array_values(array_unique($items));
+            sort($items);
+            $toolbars[$format] = $items;
+        }
+        ksort($toolbars);
+        return $toolbars;
+    }
+
+    /** @return array<string, array{enabled: bool, filters: list<string>}> */
+    private function textFormats(string $configPath): array
+    {
+        $formats = [];
+        foreach ($this->files($configPath . '/filter.format.*.yml') as $path) {
+            $config = $this->parse($path);
+            $format = isset($config['format']) && is_string($config['format'])
+                ? $config['format']
+                : $this->configId($path, 'filter.format.');
+            $configuredFilters = isset($config['filters']) && is_array($config['filters']) ? $config['filters'] : [];
+            $filters = [];
+            foreach ($configuredFilters as $id => $definition) {
+                if (is_string($id) && is_array($definition) && ($definition['status'] ?? false) === true) {
+                    $filters[] = $id;
+                }
+            }
+            sort($filters);
+            $formats[$format] = [
+                'enabled' => ($config['status'] ?? false) === true,
+                'filters' => $filters,
+            ];
+        }
+        ksort($formats);
+        return $formats;
     }
 
     private function configId(string $path, string $prefix): string
