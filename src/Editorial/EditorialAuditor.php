@@ -40,6 +40,7 @@ final readonly class EditorialAuditor
             }
 
             $sites = $this->discovery->discover($project);
+            $expectedSites = $this->expectedSites($project);
             if ($sites === []) {
                 $results[] = new Result(
                     'editorial.config.discovery',
@@ -47,7 +48,10 @@ final readonly class EditorialAuditor
                     $project->id,
                     'No Drupal exported configuration directory was discovered.',
                     $observedAt,
-                    ['searched_layouts' => ['config/sync', 'project/config/*/config']],
+                    array_filter([
+                        'searched_layouts' => ['config/sync', 'project/config/*/config'],
+                        'expected_sites' => $expectedSites,
+                    ], static fn (mixed $value): bool => $value !== null),
                     'Add the project config layout to Canopy or correct the inventory path.',
                 );
                 continue;
@@ -64,6 +68,35 @@ final readonly class EditorialAuditor
                     $sites,
                 )],
             );
+
+            if ($expectedSites !== null) {
+                $discoveredSites = array_map(static fn (EditorialSite $site): string => $site->id, $sites);
+                sort($discoveredSites);
+                $missingSites = array_values(array_diff($expectedSites, $discoveredSites));
+                $unexpectedSites = array_values(array_diff($discoveredSites, $expectedSites));
+                $status = $missingSites !== []
+                    ? Status::Unknown
+                    : ($unexpectedSites !== [] ? Status::Warn : Status::Pass);
+                $summary = match ($status) {
+                    Status::Unknown => sprintf('Expected site exports were not discovered: %s.', implode(', ', $missingSites)),
+                    Status::Warn => sprintf('Discovered sites are absent from the expected inventory: %s.', implode(', ', $unexpectedSites)),
+                    default => sprintf('All %d expected site export(s) were discovered.', count($expectedSites)),
+                };
+                $results[] = new Result(
+                    'editorial.config.site_inventory',
+                    $status,
+                    $project->id,
+                    $summary,
+                    $observedAt,
+                    [
+                        'expected_sites' => $expectedSites,
+                        'discovered_sites' => $discoveredSites,
+                        'missing_sites' => $missingSites,
+                        'unexpected_sites' => $unexpectedSites,
+                    ],
+                    $status === Status::Pass ? null : 'Update the exported configuration or the source-controlled expected site inventory after review.',
+                );
+            }
 
             foreach ($sites as $site) {
                 try {
@@ -135,5 +168,32 @@ final readonly class EditorialAuditor
         }
 
         return $results;
+    }
+
+    /** @return list<string>|null */
+    private function expectedSites(ProjectTarget $project): ?array
+    {
+        $editorial = $project->expectations['editorial'] ?? null;
+        if (!is_array($editorial) || !array_key_exists('sites', $editorial)) {
+            return null;
+        }
+
+        $sites = $editorial['sites'];
+        if (!is_array($sites)) {
+            throw new \InvalidArgumentException(sprintf('Editorial site expectations for %s must be a list.', $project->id));
+        }
+
+        $expected = [];
+        foreach ($sites as $site) {
+            if (!is_string($site) || $site === '') {
+                throw new \InvalidArgumentException(sprintf('Editorial site expectations for %s must contain non-empty strings.', $project->id));
+            }
+            $expected[] = $site;
+        }
+
+        $expected = array_values(array_unique($expected));
+        sort($expected);
+
+        return $expected;
     }
 }

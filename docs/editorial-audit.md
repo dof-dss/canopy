@@ -24,7 +24,9 @@ does not bootstrap Drupal or execute code from an audited repository.
 
 The NIDirect consumer integration provides the maintained NIDirect, DEPT, and
 Unity estate DDEV comparison command. Unity is exposed as a multi-site project,
-so discovery includes every exported site below `project/config/<site>/config`.
+so discovery includes every exported site below `project/config/<site>/config`
+while the consumer inventory records the expected site IDs. A missing expected
+export is `unknown`; an additional discovered but undeclared site is `warn`.
 The default report compares status totals and lists non-passing findings;
 `--detail` lists every check. `--status` can be repeated or accept a
 comma-separated list.

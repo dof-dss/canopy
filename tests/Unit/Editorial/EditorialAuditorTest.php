@@ -32,6 +32,44 @@ final class EditorialAuditorTest extends TestCase
         );
     }
 
+    public function testConfirmsExpectedSiteInventory(): void
+    {
+        $root = dirname(__DIR__, 2) . '/Fixtures/editorial';
+        $profile = (new EditorialProfileLoader())->load(dirname(__DIR__, 3) . '/config/editorial/nics.yml');
+        $project = new ProjectTarget('example', $root, ['editorial' => ['sites' => ['example']]]);
+        $results = (new EditorialAuditor())->audit([$project], $profile);
+
+        $inventory = $this->resultFor($results, 'editorial.config.site_inventory');
+        self::assertSame(Status::Pass, $inventory->status);
+        self::assertSame(['example'], $inventory->evidence['expected_sites']);
+        self::assertSame([], $inventory->evidence['missing_sites']);
+        self::assertSame([], $inventory->evidence['unexpected_sites']);
+    }
+
+    public function testReportsMissingExpectedSiteAsUnknown(): void
+    {
+        $root = dirname(__DIR__, 2) . '/Fixtures/editorial';
+        $profile = (new EditorialProfileLoader())->load(dirname(__DIR__, 3) . '/config/editorial/nics.yml');
+        $project = new ProjectTarget('example', $root, ['editorial' => ['sites' => ['example', 'missing']]]);
+        $results = (new EditorialAuditor())->audit([$project], $profile);
+
+        $inventory = $this->resultFor($results, 'editorial.config.site_inventory');
+        self::assertSame(Status::Unknown, $inventory->status);
+        self::assertSame(['missing'], $inventory->evidence['missing_sites']);
+    }
+
+    public function testReportsUndeclaredDiscoveredSiteAsWarning(): void
+    {
+        $root = dirname(__DIR__, 2) . '/Fixtures/editorial';
+        $profile = (new EditorialProfileLoader())->load(dirname(__DIR__, 3) . '/config/editorial/nics.yml');
+        $project = new ProjectTarget('example', $root, ['editorial' => ['sites' => []]]);
+        $results = (new EditorialAuditor())->audit([$project], $profile);
+
+        $inventory = $this->resultFor($results, 'editorial.config.site_inventory');
+        self::assertSame(Status::Warn, $inventory->status);
+        self::assertSame(['example'], $inventory->evidence['unexpected_sites']);
+    }
+
     public function testClassifiesCoreOptionalAndUnexpectedToolbarItems(): void
     {
         $root = dirname(__DIR__, 2) . '/Fixtures/editorial';
